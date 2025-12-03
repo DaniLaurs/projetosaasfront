@@ -1,5 +1,5 @@
 // src/pages/Plans.tsx
-import React, { type JSX } from "react";
+import  { type JSX } from "react";
 
 export function Plans(): JSX.Element {
   return (

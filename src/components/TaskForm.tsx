@@ -1,9 +1,13 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { taskServices } from "../services/taskServices";
 import { useUserContext } from "../contexts/userContext";
 import { toast } from "sonner";
 
-export default function TaskForm({ onTaskCreated }: { onTaskCreated: () => void }) {
+interface TaskFormProps {
+  onTaskCreated: () => void;
+}
+
+export default function TaskForm({ onTaskCreated }: TaskFormProps) {
   const { token } = useUserContext();
 
   const [title, setTitle] = useState("");

@@ -1,45 +1,83 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import TaskForm from "./TaskForm";
-import TaskItem from "./TaskItem";
+import { taskServices } from "../services/taskServices";
+import { useUserContext } from "../contexts/userContext";
+
+interface Task {
+  id: number;
+  title: string;
+  description?: string;
+  completed: boolean;
+}
 
 export default function TaskList() {
-  const [tasks, setTasks] = useState<
-    { id: number; text: string; completed: boolean }[]
-  >([]);
+  const { token } = useUserContext();
+  const [tasks, setTasks] = useState<Task[]>([]);
 
-  function addTask(text: string) {
-    setTasks([...tasks, { id: Date.now(), text, completed: false }]);
+  async function loadTasks() {
+    if (!token) return;
+    try {
+      const data = await taskServices.getTasks(token);
+      setTasks(data);
+    } catch (err) {
+      console.error("Erro ao carregar tarefas:", err);
+    }
   }
 
-  function toggleTask(id: number) {
-    setTasks(
-      tasks.map((t) =>
-        t.id === id ? { ...t, completed: !t.completed } : t
-      )
-    );
+  async function toggleTask(id: number) {
+    if (!token) return;
+    try {
+      await taskServices.toggleDone(token, id);
+      loadTasks();
+    } catch (err) {
+      console.error("Erro ao atualizar tarefa:", err);
+    }
   }
 
-  function deleteTask(id: number) {
-    setTasks(tasks.filter((t) => t.id !== id));
+  async function deleteTask(id: number) {
+    if (!token) return;
+    try {
+      await taskServices.deleteTask(token, id);
+      loadTasks();
+    } catch (err) {
+      console.error("Erro ao deletar tarefa:", err);
+    }
   }
+
+  useEffect(() => {
+    loadTasks();
+  }, [token]);
 
   return (
     <div className="max-w-md mx-auto bg-white shadow p-6 rounded mt-10">
       <h2 className="text-xl font-bold mb-4">Minhas Tarefas</h2>
 
-      {/* Removido onTaskCreated — não existe no TaskForm */}
-      <TaskForm onAdd={addTask} onTaskCreated={function (): void {
-        throw new Error("Function not implemented.");
-      } } />
+      <TaskForm onTaskCreated={loadTasks} />
 
-      <div>
+      <div className="mt-4 space-y-3">
         {tasks.map((task) => (
-          <TaskItem
+          <div
             key={task.id}
-            task={task}
-            onToggle={toggleTask}
-            onDelete={deleteTask}
-          />
+            className="p-3 border rounded flex justify-between items-center"
+          >
+            <div>
+              <p
+                className={task.completed ? "line-through text-gray-500" : ""}
+                onClick={() => toggleTask(task.id)}
+                style={{ cursor: "pointer" }}
+              >
+                {task.title}
+              </p>
+              {task.description && <small>{task.description}</small>}
+            </div>
+
+            <button
+              onClick={() => deleteTask(task.id)}
+              className="text-red-500 font-bold"
+            >
+              X
+            </button>
+          </div>
         ))}
       </div>
     </div>
